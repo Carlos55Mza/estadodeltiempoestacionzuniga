@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estación Zúñiga — San Martín, Mendoza | Meteorología y Monitoreo</title>
+
+  <!-- Tipografías Inter y JetBrains Mono para telemetría numérica precisa -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Tailwind CSS para diseño adaptable, grillas y utilidades -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            slateobs: {
+              950: '#060b14',
+              900: '#0b1322',
+              850: '#101b30',
+              800: '#16243f',
+              700: '#223558',
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* Estilo base de observatorio ambiental con cuadrícula sutil y brillos suaves */
+    body {
+      background-color: #060b14;
+      color: #f1f5f9;
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(14, 165, 233, 0.12), transparent 36%),
+        radial-gradient(circle at 85% 15%, rgba(34, 211, 238, 0.08), transparent 34%),
+        linear-gradient(to right, rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      overflow-x: hidden;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Tarjeta tipo consola de monitoreo */
+    .obs-card {
+      background: linear-gradient(180deg, rgba(16, 27, 48, 0.88) 0%, rgba(11, 19, 34, 0.94) 100%);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Pulso suave para indicador de telemetría en vivo */
+    @keyframes pulseSoft {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.45;
+        transform: scale(1.18);
+      }
+    }
+
+    .pulse-live {
+      animation: pulseSoft 2s infinite ease-in-out;
+    }
+
+    /* Estilizado discreto de scrollbars internas */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b1322;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #223558;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334e7e;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- ==================== ENCABEZADO DE TELEMETRÍA Y ESTACIÓN ==================== -->
+  <header class="sticky top-0 z-30 border-b border-slate-800/90 bg-slateobs-950/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <!-- Identidad de la estación y ubicación -->
+        <div class="flex items-start sm:items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
+            <!-- Ícono SVG de estación meteorológica / radar -->
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+                Estación Zúñiga
+              </h1>
+              <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-400/30">
+                San Martín, Mendoza
+              </span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span>Zona Este Mendocino · 33°04′S 68°28′O · ~650 m s. n. m.</span>
+              <span class="hidden sm:inline text-slate-600">•</span>
+              <span class="text-slate-300 font-medium">Consola Hard Kraft &amp; Red Weathercloud</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Estado de telemetría y reloj en vivo -->
+        <div class="flex flex-wrap items-center justify-between sm:justify-end gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800/70">
+          <!-- Badge de conexión activa -->
+          <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-live"></span>
+            <div class="text-xs">
+              <span class="font-semibold text-emerald-300 block leading-tight">Telemetría Activa</span>
+              <span class="text-emerald-400/80 text-[11px]">Hard Kraft → Weathercloud</span>
+            </div>
+          </div>
+
+          <!-- Reloj y fecha en vivo -->
+          <div class="px-3.5 py-2 rounded-xl bg-slateobs-900 border border-slate-800 text-right">
+            <div id="live-clock" class="font-mono text-sm sm:text-base font-bold text-cyan-300 tabular-nums leading-tight">
+              --:--:--
+            </div>
+            <div id="live-date" class="text-[11px] text-slate-400 capitalize">
+              Cargando fecha...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+
+    <!-- Banner de estado sinóptico dinámico según condiciones actuales -->
+    <section aria-label="Estado sinóptico actual" class="obs-card rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="flex items-start sm:items-center gap-3.5">
+        <div id="condition-badge" class="px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-cyan-500/15 text-cyan-300 border border-cyan-400/30 shrink-0">
+          Condición Normal
+        </div>
+        <div>
+          <h2 id="condition-title" class="text-base sm:text-lg font-bold text-white">
+            Cielo despejado a algo nublado en el Este mendocino
+          </h2>
+          <p id="condition-summary" class="text-xs sm:text-sm text-slate-300 mt-0.5">
+            Amplitud térmica moderada, brisa suave del sudeste y presión atmosférica estable. Ideal para actividad agrícola y urbana.
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-slate-400 shrink-0">
+        <span>Última actualización:</span>
+        <span id="last-telemetry-update" class="font-mono text-slate-200 font-medium">Hace instantes</span>
+      </div>
+    </section>
+
+    <!-- ==================== PANEL DE TELEMETRÍA + SIMULADOR / CALIBRACIÓN ==================== -->
+    <section aria-labelledby="telemetry-heading" class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h2 id="telemetry-heading" class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+            <span class="w-2 h-6 rounded-full bg-cyan-400 inline-block"></span>
+            Telemetría Meteorológica en Tiempo Real
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400">
+            Valores de ejemplo basados en registros de la estación. Simulá escenarios mendocinos o ajustá variables manualmente.
+          </p>
+        </div>
+        <button
+          id="toggle-editor-btn"
+          type="button"
+          class="self-start sm:self-auto px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-400/30 transition cursor-pointer"
+        >
+          Calibrar / Editar Valores
+        </button>
+      </div>
+
+      <!-- Botones de escenarios climáticos rápidos -->
+      <div class="flex flex-wrap gap-2.5" role="group" aria-label="Simulador de escenarios meteorológicos">
+        <button
+          type="button"
+          data-scenario="verano"
+          class="scenario-btn px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slateobs-850 hover:bg-slateobs-800 text-slate-200 border border-slate-700/80 transition flex items-center gap-2 cursor-pointer"
+        >
+          <span>☀️</span>
+          <span>Día de verano mendocino</span>
+        </button>
+        <button
+          type="button"
+          data-scenario="zonda"
+          class="scenario-btn px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slateobs-850 hover:bg-slateobs-800 text-slate-200 border border-slate-700/80 transition flex items-center gap-2 cursor-pointer"
+        >
+          <span>🌪️</span>
+          <span>Zonda / Viento fuerte</span>
+        </button>
+        <button
+          type="button"
+          data-scenario="tormenta"
+          class="scenario-btn px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slateobs-850 hover:bg-slateobs-800 text-slate-200 border border-slate-700/80 transition flex items-center gap-2 cursor-pointer"
+        >
+          <span>⛈️</span>
+          <span>Alerta de tormenta / granizo</span>
+        </button>
+        <button
+          type="button"
+          data-scenario="helada"
+          class="scenario-btn px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slateobs-850 hover:bg-slateobs-800 text-slate-200 border border-slate-700/80 transition flex items-center gap-2 cursor-pointer"
+        >
+          <span>❄️</span>
+          <span>Noche fresca con riesgo de helada</span>
+        </button>
+      </div>
+
+      <!-- Panel desplegable de edición/calibración manual -->
+      <div id="manual-editor-panel" class="hidden obs-card rounded-2xl p-4 sm:p-6 border border-cyan-500/30">
+        <div class="flex items-center justify-between gap-2 mb-4">
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-cyan-300">Ajuste Manual de Sensores (Simulación / Calibración)</h3>
+            <p class="text-xs text-slate-400">Modificá cualquier parámetro para actualizar la telemetría, alertas y partes al instante.</p>
+          </div>
+          <button
+            id="reset-defaults-btn"
+            type="button"
+            class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition cursor-pointer"
+          >
+            Restablecer base
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          <!-- Temperatura -->
+          <div class="bg-slateobs-950/70 p-3 rounded-xl border border-slate-800">
+            <label for="input-temp" class="block text-slate-300 font-semibold mb-1.5">Temperatura (°C)</label>
+            <input id="input-temp" type="number" step="0.1" class="w-full px-3 py-2 rounded-lg bg-slateobs-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-cyan-400" />
+          </div>
+
+          <!-- Sensación térmica -->
+          <div class="bg-slateobs-950/70 p-3 rounded-xl border border-slate-800">
+            <label for="input-feels" class="block text-slate-300 font-semibold mb-1.5">Sensación térmica (°C)</label>
+            <input id="input-feels" type="number" step="0.1" class="w-full px-3 py-2 rounded-lg bg-slateobs-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-cyan-400" />
+          </div>
+
+          <!-- Humedad relativa -->
+          <div class="bg-slateobs-950/70 p-3 rounded-xl border border-slate-800">
+            <label for="input-humidity" class="block text-slate-300 font-semibold mb-1.5">Humedad relativa (%)</label>
+            <input id="input-humidity" type="number" min="1" max="100" step="1" class="w-full px-3 py-2 rounded-lg bg-slateobs-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-cyan-400" />
+          </div>
+
+          <!-- Presión atmosférica -->
+          <div class="bg-slateobs-950/70 p-3 rounded-xl border border-slate-800">
+            <label for="input-pressure" class="block text-slate-300 font-semibold mb-1.5">Presión relativa (hPa)</label>
+            <input id="input-pressure" type="number" min="950" max="1060" step="0.5" class="w-full px-3 py-2 rounded-lg bg-slateobs-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-cyan-400" />
+          </div>
+
+          <!-- Tendencia barométrica -->
+          <div class="bg-slateobs-950/70 p-3 rounded-xl border border-slate-800">
+            <label for="input-trend" class="block text-slate-300 font-semibold mb-1.5">Tendencia barométrica</label>
+            <select id="input-trend" class="w-full px-3 py-2 rounded-lg bg-slateobs-900 border border-slate-700 text-white focus:outline-none focus:border-cyan-400">
+              <option value="Estable">Estable</option>
+              <option value="En ascenso">En ascenso</option>
+              <option value="En descenso">En descenso</option>
+              <option value="Descenso rápido">Descenso rápido</option>
+            </select>
+          </div>
+
+          <!-- Viento y ráfagas -->
+          <div class="bg-slateobs-950/70 p-3 rounded-xl border border-slate-800">
+            <label for="input-wind" class="block text-slate-300 font-semibold mb-1.5">Viento sostenido (km/h)</label>
+            <input id="input-wind" type="number" min="0" max="150" step="1" class="w-full px-3 py-2 rounded-lg bg-slateobs-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-cyan-400" />
+          </div>
+
+          <div class="bg-slateobs-950/70 p-3 rounded-xl border border-slate-800">
+            <label for="input-gust" class="block text-slate-300 font-semibold mb-1.5">Ráfagas máximas (km/h)</label>
+            <input id="input-gust" type="number" min="0" max="180" step="1" class="w-full px-3 py-2 rounded-lg bg-slateobs-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-cyan-400" />
+          </div>
+
+          <!-- Punto de rocío e índice UV -->
+          <div class="bg-slateobs-950/70 p-3 rounded-xl border border-slate-800">
+            <label for="input-uv" class="block text-slate-300 font-semibold mb-1.5">Radiación UV (0–14)</label>
+            <input id="input-uv" type="number" min="0" max="15" step="0.1" class="w-full px-3 py-2 rounded-lg bg-slateobs-900 border border-slate-700 text-white font-mono focus:outline-none focus:border-cyan-400" />
+          </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p class="text-xs text-slate-400">
+            * El punto de rocío se recalcula automáticamente mediante fórmula de Magnus a partir de temperatura y humedad.
+          </p>
+          <button
+            id="apply-manual-btn"
+            type="button"
+            class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition shadow-lg shadow-cyan-500/20 cursor-pointer"
+          >
+            Aplicar lectura
+          </button>
+        </div>
+      </div>
+
+      <!-- Grilla principal de variables meteorológicas -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Temperatura y sensación -->
+        <article class="obs-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Temperatura</span>
+            <span class="text-cyan-400 text-lg">🌡️</span>
+          </div>
+          <div class="my-3">
+            <div id="metric-temp" class="font-mono text-3xl sm:text-4xl font-bold text-white tabular-nums">26.4°C</div>
+            <div id="metric-feels" class="text-xs sm:text-sm text-slate-400 mt-1">Sensación térmica: <span class="text-slate-200 font-mono">25.8°C</span></div>
+          </div>
+          <div class="text-xs text-cyan-300/90 border-t border-slate-800/80 pt-2.5 flex items-center justify-between">
+            <span>Sensor exterior</span>
+            <span class="font-mono">Hard Kraft CH-1</span>
+          </div>
+        </article>
+
+        <!-- Humedad y punto de rocío -->
+        <article class="obs-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Humedad &amp; Rocío</span>
+            <span class="text-cyan-400 text-lg">💧</span>
+          </div>
+          <div class="my-3">
+            <div id="metric-humidity" class="font-mono text-3xl sm:text-4xl font-bold text-white tabular-nums">38%</div>
+            <div id="metric-dew" class="text-xs sm:text-sm text-slate-400 mt-1">Punto de rocío: <span class="text-cyan-300 font-mono">10.7°C</span></div>
+          </div>
+          <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <div id="humidity-bar" class="bg-cyan-400 h-full rounded-full transition-all duration-300" style="width: 38%"></div>
+          </div>
+        </article>
+
+        <!-- Presión atmosférica -->
+        <article class="obs-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Presión Relativa</span>
+            <span class="text-cyan-400 text-lg">🧭</span>
+          </div>
+          <div class="my-3">
+            <div id="metric-pressure" class="font-mono text-3xl sm:text-4xl font-bold text-white tabular-nums">1014.5 <span class="text-lg text-slate-400">hPa</span></div>
+            <div id="metric-trend" class="text-xs sm:text-sm text-slate-400 mt-1">Tendencia: <span class="text-emerald-300 font-semibold">Estable</span></div>
+          </div>
+          <div class="text-xs text-slate-400 border-t border-slate-800/80 pt-2.5 flex items-center justify-between">
+            <span>Barómetro compensado</span>
+            <span class="font-mono text-slate-300">Nivel estación</span>
+          </div>
+        </article>
+
+        <!-- Viento, ráfagas y radiación UV -->
+        <article class="obs-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Viento &amp; UV</span>
+            <span class="text-cyan-400 text-lg">🌬️</span>
+          </div>
+          <div class="my-3">
+            <div id="metric-wind" class="font-mono text-2xl sm:text-3xl font-bold text-white tabular-nums">14 <span class="text-sm font-normal text-slate-400">km/h</span> <span id="metric-wind-dir" class="text-sm text-cyan-300">SE</span></div>
+            <div class="text-xs sm:text-sm text-slate-400 mt-1 flex items-center justify-between gap-2">
+              <span>Ráfagas: <strong id="metric-gust" class="text-slate-200 font-mono">23 km/h</strong></span>
+              <span>UV: <strong id="metric-uv" class="text-amber-300 font-mono">7.5</strong></span>
+            </div>
+          </div>
+          <div id="uv-label" class="text-xs text-amber-300/90 border-t border-slate-800/80 pt-2.5">
+            Radiación UV alta — protección solar recomendada
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================== BOLETÍN PARA MEDIOS + MONITOREO SÍSMICO Y RIESGOS ==================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- MÓDULO DE BOLETÍN PARA MEDIOS Y PRONÓSTICO (7 columnas en desktop) -->
+      <section aria-labelledby="bulletin-heading" class="lg:col-span-7 obs-card rounded-2xl p-5 sm:p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 id="bulletin-heading" class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+              <span class="w-2 h-6 rounded-full bg-sky-400 inline-block"></span>
+              Boletín para Medios y Pronóstico
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400">
+              Generá partes listos para enviar a redacciones, diarios, radios o canales de noticias.
+            </p>
+          </div>
+          <button
+            id="copy-bulletin-btn"
+            type="button"
+            class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition flex items-center justify-center gap-2 shrink-0 shadow-md shadow-cyan-500/15 cursor-pointer"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2Z" />
+            </svg>
+            <span id="copy-btn-text">Copiar Parte</span>
+          </button>
+        </div>
+
+        <!-- Selector de formato / tono -->
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Formato de boletín para medios">
+          <button
+            type="button"
+            data-format="diario"
+            class="format-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-200 border border-cyan-400/40 transition cursor-pointer"
+          >
+            Parte diario
+          </button>
+          <button
+            type="button"
+            data-format="alerta"
+            class="format-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slateobs-900 hover:bg-slateobs-800 text-slate-300 border border-slate-700/80 transition cursor-pointer"
+          >
+            Alerta preventiva
+          </button>
+          <button
+            type="button"
+            data-format="regional"
+            class="format-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slateobs-900 hover:bg-slateobs-800 text-slate-300 border border-slate-700/80 transition cursor-pointer"
+          >
+            Informe regional
+          </button>
+        </div>
+
+        <!-- Área de texto editable del parte -->
+        <div>
+          <label for="bulletin-output" class="sr-only">Texto del boletín meteorológico</label>
+          <textarea
+            id="bulletin-output"
+            rows="11"
+            class="w-full rounded-xl bg-slateobs-950/90 border border-slate-800 focus:border-cyan-400 focus:outline-none p-4 text-xs sm:text-sm font-mono text-slate-200 leading-relaxed resize-y"
+          ></textarea>
+        </div>
+
+        <!-- Mensaje de confirmación accesible (sin alert()) -->
+        <div id="copy-feedback" class="hidden text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 px-3.5 py-2 rounded-xl">
+          ✓ Parte copiado al portapapeles. Ya podés pegarlo en correo, WhatsApp o redacción.
+        </div>
+      </section>
+
+      <!-- MÓDULO DE MONITOREO SÍSMICO Y RIESGOS NATURALES (5 columnas en desktop) -->
+      <section aria-labelledby="risks-heading" class="lg:col-span-5 obs-card rounded-2xl p-5 sm:p-6 space-y-5">
+        <div>
+          <h2 id="risks-heading" class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+            <span class="w-2 h-6 rounded-full bg-amber-400 inline-block"></span>
+            Monitoreo Sísmico y Riesgo Natural
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400">
+            Seguimiento de amenazas frecuentes en Mendoza y Cuyo: actividad sísmica, Zonda, tormentas y heladas.
+          </p>
+        </div>
+
+        <!-- Sub-panel de actividad sísmica referencial -->
+        <div class="rounded-xl bg-slateobs-950/80 border border-slate-800 p-4 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-cyan-300">Actividad Sísmica (Cuyo / Precordillera)</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Vigilancia Continua
+            </span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Mendoza se ubica en zona sísmica activa. La estación complementa sus registros barométricos y de entorno con seguimiento de reportes sismológicos regionales (INPRES / red de referencia).
+          </p>
+          <div class="grid grid-cols-3 gap-2 pt-1 text-center">
+            <div class="bg-slateobs-900 rounded-lg p-2.5 border border-slate-800/90">
+              <div class="text-[10px] text-slate-400 uppercase">Último registro ref.</div>
+              <div class="font-mono text-sm font-bold text-white mt-0.5">3.2 Mw</div>
+              <div class="text-[10px] text-slate-400">Oeste de Mendoza</div>
+            </div>
+            <div class="bg-slateobs-900 rounded-lg p-2.5 border border-slate-800/90">
+              <div class="text-[10px] text-slate-400 uppercase">Profundidad</div>
+              <div class="font-mono text-sm font-bold text-cyan-300 mt-0.5">114 km</div>
+              <div class="text-[10px] text-slate-400">Subducción andina</div>
+            </div>
+            <div class="bg-slateobs-900 rounded-lg p-2.5 border border-slate-800/90">
+              <div class="text-[10px] text-slate-400 uppercase">Estado local</div>
+              <div class="font-mono text-sm font-bold text-emerald-300 mt-0.5">Sin sentir</div>
+              <div class="text-[10px] text-slate-400">San Martín</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Semáforo de riesgos meteorológicos/ambientales dinámicos -->
+        <div id="risk-cards-container" class="space-y-3">
+          <!-- Renderizado dinámicamente desde JS según la telemetría activa -->
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================== SERVICIOS PARA MEDIOS Y COLABORACIÓN ==================== -->
+    <section aria-labelledby="services-heading" class="obs-card rounded-2xl p-5 sm:p-7 space-y-6">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b border-slate-800 pb-5">
+        <div class="max-w-2xl">
+          <span class="text-xs font-bold uppercase tracking-widest text-cyan-400">Carta de Presentación Institucional</span>
+          <h2 id="services-heading" class="text-xl sm:text-2xl font-extrabold text-white mt-1">
+            Servicios para Medios de Comunicación y Colaboración
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+            Desde San Martín, Mendoza, <strong class="text-white">Estación Zúñiga</strong> brinda información meteorológica hiperlocal respaldada por telemetría continua (consola Hard Kraft conectada a Weathercloud), seguimiento de fenómenos severos y monitoreo de contexto sísmico para diarios, portales digitales, radios y organismos.
+          </p>
+        </div>
+        <a
+          href="#consulta-medios"
+          class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 transition self-start md:self-auto shrink-0"
+        >
+          Solicitar cobertura / contacto →
+        </a>
+      </div>
+
+      <!-- Tres pilares de servicio -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-2xl bg-slateobs-950/75 border border-slate-800/90 p-5 space-y-2">
+          <div class="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-300 flex items-center justify-center font-bold text-base">01</div>
+          <h3 class="text-base font-bold text-white">Pronóstico y Partes Diarios</h3>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+            Redacción clara, ágil y adaptable al estilo editorial de cada medio: temperaturas, amplitud térmica, vientos, evolución del día y perspectiva regional para el Este mendocino y Gran Mendoza.
+          </p>
+        </div>
+
+        <div class="rounded-2xl bg-slateobs-950/75 border border-slate-800/90 p-5 space-y-2">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center font-bold text-base">02</div>
+          <h3 class="text-base font-bold text-white">Alertas de Fenómenos Severos</h3>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+            Avisos preventivos ante viento Zonda, tormentas convectivas, probable granizo, descensos bruscos de presión o riesgo de heladas con impacto directo en la vida cotidiana y el agro.
+          </p>
+        </div>
+
+        <div class="rounded-2xl bg-slateobs-950/75 border border-slate-800/90 p-5 space-y-2">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center font-bold text-base">03</div>
+          <h3 class="text-base font-bold text-white">Seguimiento Sísmico y Riesgo</h3>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+            Contexto técnico y comunicación responsable ante eventos sísmicos en Cuyo y situaciones de riesgo natural, evitando alarmismos y acercando pautas prácticas a la audiencia.
+          </p>
+        </div>
+      </div>
+
+      <!-- Formulario rápido de consulta para medios -->
+      <div id="consulta-medios" class="rounded-2xl bg-slateobs-950/85 border border-slate-800 p-5 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div>
+            <h3 class="text-base sm:text-lg font-bold text-white">Consulta Rápida para Redacciones y Medios</h3>
+            <p class="text-xs text-slate-400">
+              Prepará un mensaje de colaboración o solicitud de cobertura y copialo o enviálo directo por correo.
+            </p>
+          </div>
+          <span class="text-xs font-mono text-cyan-300">San Martín · Mendoza · Argentina</span>
+        </div>
+
+        <form id="media-inquiry-form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs sm:text-sm">
+          <div>
+            <label for="media-name" class="block text-slate-300 font-medium mb-1">Medio / Organización</label>
+            <input
+              id="media-name"
+              type="text"
+              placeholder="Ej. Diario / Portal / Radio"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slateobs-900 border border-slate-700 text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400"
+            />
+          </div>
+
+          <div>
+            <label for="media-contact" class="block text-slate-300 font-medium mb-1">Editor / Contacto</label>
+            <input
+              id="media-contact"
+              type="text"
+              placeholder="Nombre y correo o teléfono"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slateobs-900 border border-slate-700 text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400"
+            />
+          </div>
+
+          <div>
+            <label for="media-service" class="block text-slate-300 font-medium mb-1">Tipo de colaboración</label>
+            <select
+              id="media-service"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slateobs-900 border border-slate-700 text-white focus:outline-none focus:border-cyan-400"
+            >
+              <option value="Parte meteorológico diario / pronóstico">Parte meteorológico diario / pronóstico</option>
+              <option value="Cobertura de alertas (Zonda, tormentas, heladas)">Cobertura de alertas (Zonda, tormentas, heladas)</option>
+              <option value="Seguimiento sísmico y desastres naturales">Seguimiento sísmico y desastres naturales</option>
+              <option value="Columna / informe regional periódico">Columna / informe regional periódico</option>
+            </select>
+          </div>
+
+          <div class="sm:col-span-2 lg:col-span-3">
+            <label for="media-message" class="block text-slate-300 font-medium mb-1">Detalles o frecuencia requerida</label>
+            <textarea
+              id="media-message"
+              rows="2"
+              placeholder="Contanos qué cobertura necesitás, horarios de cierre o si querés recibir partes diarios y alertas..."
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slateobs-900 border border-slate-700 text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400"
+            ></textarea>
+          </div>
+
+          <div class="sm:col-span-2 lg:col-span-3 flex flex-wrap items-center justify-between gap-3 pt-1">
+            <div class="flex flex-wrap gap-2.5">
+              <button
+                type="submit"
+                class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition cursor-pointer"
+              >
+                Generar y copiar mensaje
+              </button>
+              <button
+                type="button"
+                id="compose-email-btn"
+                class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer"
+              >
+                Abrir en gestor de correo
+              </button>
+            </div>
+            <div id="inquiry-status" class="hidden text-xs font-medium text-emerald-300">
+              ✓ Mensaje preparado y copiado al portapapeles.
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== PIE DE PÁGINA ==================== -->
+  <footer class="border-t border-slate-800/90 bg-slateobs-950/95 mt-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+      <div class="text-center sm:text-left">
+        <p class="font-semibold text-slate-200">
+          Estación Zúñiga — Meteorología, Seguimiento Sísmico y Riesgo Natural
+        </p>
+        <p class="mt-0.5">
+          San Martín, Mendoza, República Argentina · Consola Hard Kraft &amp; Red Weathercloud
+        </p>
+      </div>
+      <div class="text-center sm:text-right">
+        <p class="text-slate-300 font-medium">
+          Responsable: <span class="text-cyan-300 font-semibold">Carlos Daniel Zúñiga</span>
+        </p>
+        <p class="text-[11px] text-slate-500 mt-0.5">
+          Los valores de ejemplo son configurables y orientativos; contrastar siempre con avisos oficiales vigentes.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== LÓGICA INTERACTIVA DE TELEMETRÍA, ALERTAS Y BOLETINES ==================== -->
+  <script>
+    (function () {
+      // Estado base inicial de la estación (Día de verano mendocino equilibrado)
+      const BASE_STATE = {
+        scenarioName: 'Día de verano mendocino',
+        badge: 'Condición Normal',
+        badgeClasses: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30',
+        headline: 'Cielo despejado a algo nublado en el Este mendocino',
+        summary: 'Ambiente cálido y seco en San Martín con brisa moderada y presión estable. Condiciones favorables para tareas operativas.',
+        temp: 29.5,
+        feelsLike: 28.8,
+        humidity: 34,
+        pressure: 1013.0,
+        trend: 'Estable',
+        windSpeed: 15,
+        windGust: 24,
+        windDir: 'SE',
+        uv: 9.2,
+        skyNote: 'Cielo mayormente despejado con nubosidad dispersa hacia la tarde.'
+      };
+
+      // Escenarios preconfigurados representativos de Mendoza
+      const SCENARIOS = {
+        verano: { ...BASE_STATE },
+        zonda: {
+          scenarioName: 'Zonda / Viento fuerte',
+          badge: 'Alerta Viento Zonda',
+          badgeClasses: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
+          headline: 'Evento de viento seco y ráfagas intensas en el piedemonte y Este',
+          summary: 'Marcado descenso de humedad relativa, ascenso térmico rápido y caída barométrica. Precaución por polvo en suspensión y caída de ramas.',
+          temp: 32.0,
+          feelsLike: 31.4,
+          humidity: 14,
+          pressure: 1004.0,
+          trend: 'Descenso rápido',
+          windSpeed: 42,
+          windGust: 68,
+          windDir: 'O / SO',
+          uv: 8.4,
+          skyNote: 'Cielo con polvo en suspensión y nubosidad lenticular cordillerana.'
+        },
+        tormenta: {
+          scenarioName: 'Alerta de tormenta / granizo',
+          badge: 'Alerta Tormenta Severa',
+          badgeClasses: 'bg-rose-500/20 text-rose-300 border-rose-400/40',
+          headline: 'Inestabilidad severa con desarrollo de tormentas y probabilidad de granizo',
+          summary: 'Aumento de humedad y descenso de presión anticipan actividad eléctrica, ráfagas y precipitaciones localizadas en la zona.',
+          temp: 22.8,
+          feelsLike: 22.5,
+          humidity: 78,
+          pressure: 1006.5,
+          trend: 'En descenso',
+          windSpeed: 29,
+          windGust: 54,
+          windDir: 'S / SE',
+          uv: 3.1,
+          skyNote: 'Nubosidad de desarrollo vertical amenazante con chaparrones y ráfagas.'
+        },
+        helada: {
+          scenarioName: 'Noche fresca con riesgo de helada',
+          badge: 'Vigilancia Helada',
+          badgeClasses: 'bg-sky-500/20 text-sky-300 border-sky-400/40',
+          headline: 'Enfriamiento nocturno pronunciado con cielo despejado y calma relativa',
+          summary: 'Bajas temperaturas y punto de rocío cercano o bajo cero en sectores rurales del Este mendocino. Atentos en cultivos y frutales.',
+          temp: 2.1,
+          feelsLike: 0.4,
+          humidity: 72,
+          pressure: 1021.0,
+          trend: 'En ascenso',
+          windSpeed: 6,
+          windGust: 12,
+          windDir: 'SO',
+          uv: 0.0,
+          skyNote: 'Cielo despejado favorizando el enfriamiento radiativo nocturno.'
+        }
+      };
+
+      let currentState = { ...BASE_STATE };
+      let currentFormat = 'diario';
+
+      // Referencias del DOM
+      const els = {
+        liveClock: document.getElementById('live-clock'),
+        liveDate: document.getElementById('live-date'),
+        lastUpdate: document.getElementById('last-telemetry-update'),
+        conditionBadge: document.getElementById('condition-badge'),
+        conditionTitle: document.getElementById('condition-title'),
+        conditionSummary: document.getElementById('condition-summary'),
+        metricTemp: document.getElementById('metric-temp'),
+        metricFeels: document.getElementById('metric-feels'),
+        metricHumidity: document.getElementById('metric-humidity'),
+        metricDew: document.getElementById('metric-dew'),
+        humidityBar: document.getElementById('humidity-bar'),
+        metricPressure: document.getElementById('metric-pressure'),
+        metricTrend: document.getElementById('metric-trend'),
+        metricWind: document.getElementById('metric-wind'),
+        metricWindDir: document.getElementById('metric-wind-dir'),
+        metricGust: document.getElementById('metric-gust'),
+        metricUv: document.getElementById('metric-uv'),
+        uvLabel: document.getElementById('uv-label'),
+        riskContainer: document.getElementById('risk-cards-container'),
+        bulletinOutput: document.getElementById('bulletin-output'),
+        copyBtn: document.getElementById('copy-bulletin-btn'),
+        copyBtnText: document.getElementById('copy-btn-text'),
+        copyFeedback: document.getElementById('copy-feedback'),
+        toggleEditorBtn: document.getElementById('toggle-editor-btn'),
+        manualEditorPanel: document.getElementById('manual-editor-panel'),
+        applyManualBtn: document.getElementById('apply-manual-btn'),
+        resetDefaultsBtn: document.getElementById('reset-defaults-btn'),
+        inputTemp: document.getElementById('input-temp'),
+        inputFeels: document.getElementById('input-feels'),
+        inputHumidity: document.getElementById('input-humidity'),
+        inputPressure: document.getElementById('input-pressure'),
+        inputTrend: document.getElementById('input-trend'),
+        inputWind: document.getElementById('input-wind'),
+        inputGust: document.getElementById('input-gust'),
+        inputUv: document.getElementById('input-uv'),
+        inquiryForm: document.getElementById('media-inquiry-form'),
+        inquiryStatus: document.getElementById('inquiry-status'),
+        composeEmailBtn: document.getElementById('compose-email-btn')
+      };
+
+      // Cálculo aproximado del punto de rocío (°C) mediante fórmula de Magnus
+      function calculateDewPoint(tempC, rh) {
+        const safeRh = Math.max(5, Math.min(100, Number(rh) || 35));
+        const t = Number(tempC) || 20;
+        const a = 17.625;
+        const b = 243.04;
+        const alpha = Math.log(safeRh / 100) + (a * t) / (b + t);
+        const dew = (b * alpha) / (a - alpha);
+        return Number(dew.toFixed(1));
+      }
+
+      // Descripción de radiación UV
+      function getUvDescription(uv) {
+        const val = Number(uv) || 0;
+        if (val <= 0.2) return 'Radiación UV nula (noche / sin sol directo)';
+        if (val < 3) return 'Radiación UV baja — condiciones seguras';
+        if (val < 6) return 'Radiación UV moderada — precauciones habituales';
+        if (val < 8) return 'Radiación UV alta — usar gorra y protector solar';
+        if (val < 11) return 'Radiación UV muy alta — evitar exposición prolongada al mediodía';
+        return 'Radiación UV extrema — máxima protección solar requerida';
+      }
+
+      // Color de tendencia barométrica
+      function getTrendColorClass(trend) {
+        if (trend === 'Descenso rápido') return 'text-rose-300 font-bold';
+        if (trend === 'En descenso') return 'text-amber-300 font-semibold';
+        if (trend === 'En ascenso') return 'text-cyan-300 font-semibold';
+        return 'text-emerald-300 font-semibold';
+      }
+
+      // Evalúa niveles de riesgo natural a partir de los valores activos
+      function evaluateRisks(state, dewPoint) {
+        const risks = [];
+
+        // 1. Viento Zonda
+        let zondaLevel = 'Bajo';
+        let zondaTone = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+        let zondaNote = 'Sin indicios de Zonda en superficie; circulación habitual.';
+        if (state.windGust >= 55 || (state.windSpeed >= 35 && state.humidity <= 22)) {
+          zondaLevel = 'Alto';
+          zondaTone = 'bg-rose-500/15 text-rose-300 border-rose-500/35';
+          zondaNote = 'Ráfagas intensas y aire muy seco. Asegurar objetos sueltos, conducir con precaución y mantenerse hidratado.';
+        } else if (state.windGust >= 35 || state.humidity <= 25) {
+          zondaLevel = 'Moderado';
+          zondaTone = 'bg-amber-500/15 text-amber-300 border-amber-500/35';
+          zondaNote = 'Baja humedad o ráfagas en aumento. Seguir evolución de presión y viento en precordillera y Este.';
+        }
+        risks.push({ title: 'Viento Zonda / Ráfagas', level: zondaLevel, tone: zondaTone, note: zondaNote });
+
+        // 2. Tormentas y granizo
+        let stormLevel = 'Bajo';
+        let stormTone = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+        let stormNote = 'Baja probabilidad de tormentas severas en el corto plazo.';
+        if (state.humidity >= 72 && (state.trend === 'En descenso' || state.trend === 'Descenso rápido' || state.windGust >= 45)) {
+          stormLevel = 'Alto';
+          stormTone = 'bg-rose-500/15 text-rose-300 border-rose-500/35';
+          stormNote = 'Alta humedad con caída de presión o ráfagas: posible actividad eléctrica, lluvias intensas y ocasional granizo.';
+        } else if (state.humidity >= 62 || state.trend === 'Descenso rápido') {
+          stormLevel = 'Moderado';
+          stormTone = 'bg-amber-500/15 text-amber-300 border-amber-500/35';
+          stormNote = 'Aumento de humedad o tendencia bárica a la baja. Atentos a cambios convectivos hacia la tarde/noche.';
+        }
+        risks.push({ title: 'Tormentas / Granizo', level: stormLevel, tone: stormTone, note: stormNote });
+
+        // 3. Heladas agrícolas
+        let frostLevel = 'Bajo';
+        let frostTone = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+        let frostNote = 'Temperatura por encima de umbrales de helada.';
+        if (state.temp <= 1.5 || dewPoint <= -1.0) {
+          frostLevel = 'Alto';
+          frostTone = 'bg-rose-500/15 text-rose-300 border-rose-500/35';
+          frostNote = 'Riesgo elevado de helada en zonas cultivadas. Activar medidas de protección térmica en fincas y huertos.';
+        } else if (state.temp <= 4.5 || dewPoint <= 1.5) {
+          frostLevel = 'Moderado';
+          frostTone = 'bg-amber-500/15 text-amber-300 border-amber-500/35';
+          frostNote = 'Noche fría con punto de rocío bajo. Vigilar sectores bajos y canales de riego en el Este mendocino.';
+        }
+        risks.push({ title: 'Heladas Agrícolas', level: frostLevel, tone: frostTone, note: frostNote });
+
+        return risks;
+      }
+
+      // Construye el texto del boletín según el formato seleccionado
+      function buildBulletinText(state, format) {
+        const dew = calculateDewPoint(state.temp, state.humidity);
+        const nowStr = new Date().toLocaleString('es-AR', {
+          timeZone: 'America/Argentina/Mendoza',
+          dateStyle: 'short',
+          timeStyle: 'short'
+        });
+
+        const baseHeader = `ESTACIÓN ZÚÑIGA — SAN MARTÍN, MENDOZA\nTelemetría: Hard Kraft / Weathercloud | Actualización: ${nowStr} h\n------------------------------------------------------------`;
+
+        if (format === 'alerta') {
+          return `${baseHeader}
+[ALERTA PREVENTIVA — MONITOREO LOCAL]
+Escenario detectado: ${state.scenarioName.toUpperCase()}
+${state.headline}.
+
+Variables registradas en estación:
+• Temperatura: ${state.temp.toFixed(1)}°C (Sensación: ${state.feelsLike.toFixed(1)}°C)
+• Humedad: ${state.humidity}% | Punto de rocío: ${dew.toFixed(1)}°C
+• Viento: ${state.windSpeed} km/h (${state.windDir}) con ráfagas de hasta ${state.windGust} km/h
+• Presión: ${state.pressure.toFixed(1)} hPa (${state.trend})
+
+Recomendación: ${state.summary}`;
+        }
+
+        if (format === 'regional') {
+          return `${baseHeader}
+INFORME REGIONAL — ESTE MENDOCINO Y ENTORNO
+Situación sinóptica: ${state.skyNote}
+
+Síntesis de telemetría en San Martín:
+• Térmica: ${state.temp.toFixed(1)}°C actuales (ST ${state.feelsLike.toFixed(1)}°C), humedad del ${state.humidity}% y rocío en ${dew.toFixed(1)}°C.
+• Viento y presión: ${state.windSpeed} km/h (${state.windDir}), ráfagas de ${state.windGust} km/h y presión de ${state.pressure.toFixed(1)} hPa (${state.trend}).
+• Radiación UV: ${state.uv.toFixed(1)} (${getUvDescription(state.uv).split('—')[0].trim()}).
+
+Lectura operativa: ${state.summary}`;
+        }
+
+        // Formato por defecto: Parte diario
+        return `${baseHeader}
+PARTE METEOROLÓGICO DIARIO — SAN MARTÍN, MENDOZA
+${state.headline}. ${state.skyNote}
+
+Datos actuales de la estación:
+• Temperatura: ${state.temp.toFixed(1)}°C | Sensación térmica: ${state.feelsLike.toFixed(1)}°C
+• Humedad relativa: ${state.humidity}% | Punto de rocío: ${dew.toFixed(1)}°C
+• Presión atmosférica: ${state.pressure.toFixed(1)} hPa (${state.trend})
+• Viento: ${state.windSpeed} km/h (${state.windDir}) | Ráfagas: ${state.windGust} km/h | UV: ${state.uv.toFixed(1)}
+
+Observación: ${state.summary}`;
+      }
+
+      // Sincroniza los campos del formulario manual con el estado actual
+      function syncInputsFromState(state) {
+        els.inputTemp.value = state.temp;
+        els.inputFeels.value = state.feelsLike;
+        els.inputHumidity.value = state.humidity;
+        els.inputPressure.value = state.pressure;
+        els.inputTrend.value = state.trend;
+        els.inputWind.value = state.windSpeed;
+        els.inputGust.value = state.windGust;
+        els.inputUv.value = state.uv;
+      }
+
+      // Renderiza toda la interfaz a partir de currentState
+      function renderAll() {
+        const dew = calculateDewPoint(currentState.temp, currentState.humidity);
+
+        // Banner sinóptico
+        els.conditionBadge.className = `px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider border shrink-0 ${currentState.badgeClasses}`;
+        els.conditionBadge.textContent = currentState.badge;
+        els.conditionTitle.textContent = currentState.headline;
+        els.conditionSummary.textContent = currentState.summary;
+        els.lastUpdate.textContent = new Date().toLocaleTimeString('es-AR', {
+          timeZone: 'America/Argentina/Mendoza',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+
+        // Tarjetas de telemetría
+        els.metricTemp.textContent = `${Number(currentState.temp).toFixed(1)}°C`;
+        els.metricFeels.innerHTML = `Sensación térmica: <span class="text-slate-200 font-mono">${Number(currentState.feelsLike).toFixed(1)}°C</span>`;
+
+        const humClamped = Math.max(0, Math.min(100, Number(currentState.humidity) || 0));
+        els.metricHumidity.textContent = `${humClamped}%`;
+        els.metricDew.innerHTML = `Punto de rocío: <span class="text-cyan-300 font-mono">${dew.toFixed(1)}°C</span>`;
+        els.humidityBar.style.width = `${humClamped}%`;
+
+        els.metricPressure.innerHTML = `${Number(currentState.pressure).toFixed(1)} <span class="text-lg text-slate-400">hPa</span>`;
+        els.metricTrend.innerHTML = `Tendencia: <span class="${getTrendColorClass(currentState.trend)}">${currentState.trend}</span>`;
+
+        els.metricWind.innerHTML = `${Number(currentState.windSpeed)} <span class="text-sm font-normal text-slate-400">km/h</span> <span id="metric-wind-dir" class="text-sm text-cyan-300">${currentState.windDir}</span>`;
+        els.metricGust.textContent = `${Number(currentState.windGust)} km/h`;
+        els.metricUv.textContent = Number(currentState.uv).toFixed(1);
+        els.uvLabel.textContent = getUvDescription(currentState.uv);
+
+        // Semáforo de riesgos
+        const risks = evaluateRisks(currentState, dew);
+        els.riskContainer.innerHTML = risks.map((r) => `
+          <div class="rounded-xl bg-slateobs-950/70 border border-slate-800/90 p-3.5 space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-bold text-white">${r.title}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${r.tone}">
+                Riesgo ${r.level}
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">${r.note}</p>
+          </div>
+        `).join('');
+
+        // Boletín para medios
+        els.bulletinOutput.value = buildBulletinText(currentState, currentFormat);
+
+        // Sincronizar inputs manuales
+        syncInputsFromState(currentState);
+      }
+
+      // Actualiza reloj y fecha de Mendoza en tiempo real
+      function updateClock() {
+        const now = new Date();
+        els.liveClock.textContent = now.toLocaleTimeString('es-AR', {
+          timeZone: 'America/Argentina/Mendoza',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }) + ' h';
+
+        els.liveDate.textContent = now.toLocaleDateString('es-AR', {
+          timeZone: 'America/Argentina/Mendoza',
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+      }
+
+      // Copiado seguro al portapapeles con respaldo execCommand
+      function copyToClipboard(text, onSuccess) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(onSuccess).catch(() => fallbackCopy(text, onSuccess));
+        } else {
+          fallbackCopy(text, onSuccess);
+        }
+      }
+
+      function fallbackCopy(text, onSuccess) {
+        const helper = document.createElement('textarea');
+        helper.value = text;
+        helper.style.position = 'fixed';
+        helper.style.opacity = '0';
+        document.body.appendChild(helper);
+        helper.select();
+        try {
+          document.execCommand('copy');
+          onSuccess();
+        } catch (err) {
+          console.error('No se pudo copiar automáticamente:', err);
+        }
+        document.body.removeChild(helper);
+      }
+
+      // Eventos de botones de escenarios
+      document.querySelectorAll('.scenario-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-scenario');
+          if (SCENARIOS[key]) {
+            currentState = { ...SCENARIOS[key] };
+            document.querySelectorAll('.scenario-btn').forEach((b) => {
+              b.classList.remove('ring-2', 'ring-cyan-400/60', 'border-cyan-400');
+            });
+            btn.classList.add('ring-2', 'ring-cyan-400/60', 'border-cyan-400');
+            renderAll();
+          }
+        });
+      });
+
+      // Eventos de selector de formato de boletín
+      document.querySelectorAll('.format-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          currentFormat = btn.getAttribute('data-format') || 'diario';
+          document.querySelectorAll('.format-btn').forEach((b) => {
+            b.className = 'format-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slateobs-900 hover:bg-slateobs-800 text-slate-300 border border-slate-700/80 transition cursor-pointer';
+          });
+          btn.className = 'format-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-200 border border-cyan-400/40 transition cursor-pointer';
+          els.bulletinOutput.value = buildBulletinText(currentState, currentFormat);
+        });
+      });
+
+      // Copiar boletín
+      els.copyBtn.addEventListener('click', () => {
+        copyToClipboard(els.bulletinOutput.value, () => {
+          els.copyBtnText.textContent = '¡Copiado!';
+          els.copyFeedback.classList.remove('hidden');
+          setTimeout(() => {
+            els.copyBtnText.textContent = 'Copiar Parte';
+          }, 2200);
+        });
+      });
+
+      // Alternar panel de calibración manual
+      els.toggleEditorBtn.addEventListener('click', () => {
+        const isHidden = els.manualEditorPanel.classList.contains('hidden');
+        els.manualEditorPanel.classList.toggle('hidden');
+        els.toggleEditorBtn.textContent = isHidden ? 'Ocultar Calibración' : 'Calibrar / Editar Valores';
+      });
+
+      // Aplicar valores manuales
+      els.applyManualBtn.addEventListener('click', () => {
+        const temp = parseFloat(els.inputTemp.value);
+        const feels = parseFloat(els.inputFeels.value);
+        const hum = parseFloat(els.inputHumidity.value);
+        const pres = parseFloat(els.inputPressure.value);
+        const wind = parseFloat(els.inputWind.value);
+        const gust = parseFloat(els.inputGust.value);
+        const uv = parseFloat(els.inputUv.value);
+
+        currentState = {
+          ...currentState,
+          scenarioName: 'Lectura calibrada manualmente',
+          badge: 'Lectura Ajustada',
+          badgeClasses: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/35',
+          headline: 'Parámetros actualizados desde consola de calibración',
+          summary: 'Simulación/lectura manual activa con recálculo automático de punto de rocío, niveles de riesgo y parte para medios.',
+          temp: Number.isFinite(temp) ? temp : currentState.temp,
+          feelsLike: Number.isFinite(feels) ? feels : (Number.isFinite(temp) ? temp : currentState.feelsLike),
+          humidity: Number.isFinite(hum) ? Math.max(1, Math.min(100, hum)) : currentState.humidity,
+          pressure: Number.isFinite(pres) ? pres : currentState.pressure,
+          trend: els.inputTrend.value || currentState.trend,
+          windSpeed: Number.isFinite(wind) ? Math.max(0, wind) : currentState.windSpeed,
+          windGust: Number.isFinite(gust) ? Math.max(0, gust) : currentState.windGust,
+          uv: Number.isFinite(uv) ? Math.max(0, uv) : currentState.uv
+        };
+        renderAll();
+      });
+
+      // Restablecer valores base
+      els.resetDefaultsBtn.addEventListener('click', () => {
+        currentState = { ...BASE_STATE };
+        document.querySelectorAll('.scenario-btn').forEach((b) => {
+          b.classList.remove('ring-2', 'ring-cyan-400/60', 'border-cyan-400');
+        });
+        renderAll();
+      });
+
+      // Armar texto de consulta para medios
+      function buildMediaMessage() {
+        const media = document.getElementById('media-name').value.trim() || 'Medio de comunicación';
+        const contact = document.getElementById('media-contact').value.trim() || 'A confirmar';
+        const service = document.getElementById('media-service').value;
+        const details = document.getElementById('media-message').value.trim() || 'Consulta sobre disponibilidad y modalidad de envío de partes/alertas.';
+
+        return `Hola Carlos, nos contactamos desde ${media} (${contact}).\nServicio de interés: ${service}.\nMensaje: ${details}\n\nEnviado desde la web de Estación Zúñiga (San Martín, Mendoza).`;
+      }
+
+      els.inquiryForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        copyToClipboard(buildMediaMessage(), () => {
+          els.inquiryStatus.classList.remove('hidden');
+          setTimeout(() => {
+            els.inquiryStatus.classList.add('hidden');
+          }, 3000);
+        });
+      });
+
+      els.composeEmailBtn.addEventListener('click', () => {
+        const subject = encodeURIComponent('Consulta de Medios — Estación Zúñiga (San Martín, Mendoza)');
+        const body = encodeURIComponent(buildMediaMessage());
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      });
+
+      // Inicialización
+      updateClock();
+      setInterval(updateClock, 1000);
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
