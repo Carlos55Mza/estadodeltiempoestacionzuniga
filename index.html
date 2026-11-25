@@ -172,8 +172,8 @@
           <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 beacon-live shrink-0"></span>
             <div class="leading-tight">
-              <div class="text-[11px] font-extrabold tracking-wide text-emerald-300">ONLINE · HARD KRAFT / WEATHERCLOUD</div>
-              <div id="header-sync-time" class="text-[10px] font-mono text-emerald-400/85">Sincronizado en vivo</div>
+              <div class="text-[11px] font-extrabold tracking-wide text-emerald-300">HARD KRAFT / WEATHERCLOUD</div>
+              <div id="header-sync-time" class="text-[10px] font-mono text-emerald-400/85">Sin lectura verificada · demostración</div>
             </div>
           </div>
 
@@ -1250,6 +1250,22 @@
       };
 
       let state = JSON.parse(JSON.stringify(SCENARIOS.despejado));
+      const storageKey = 'estacion-zuniga-manual-v1';
+      let readingMode = 'demo';
+      function setReadingStatus(message) {
+        document.getElementById('header-sync-time').textContent = message;
+      }
+      function restoreManual() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(storageKey));
+          if (!saved || !saved.state || !Number.isFinite(saved.state.temp) || !Array.isArray(saved.state.temp24h) || !Array.isArray(saved.state.baro12h)) return false;
+          state = saved.state;
+          readingMode = 'manual';
+          setReadingStatus('Manual local · ' + new Date(saved.at).toLocaleString('es-AR'));
+          return true;
+        } catch (_) { return false; }
+      }
+      restoreManual();
       let currentQuakeKey = 'q1';
       let currentPressFormat = 'flash';
       let goesZoomed = false;
@@ -1398,6 +1414,7 @@
 
       // Generación automática de boletines para medios
       function buildPressBulletin() {
+        if (readingMode === 'demo') return 'SIMULACIÓN: no hay mediciones verificadas de la estación. No publicar como parte meteorológico real.';
         const dew = calcDewPoint(state.temp, state.humidity);
         const cardinal = degToCardinal(state.windDeg);
         const quake = QUAKES[currentQuakeKey];
@@ -1715,6 +1732,8 @@ Elaboración y análisis: Carlos Daniel Zúñiga — Estación Zúñiga (San Mar
           const key = btn.getAttribute('data-scenario');
           if (!SCENARIOS[key]) return;
           state = JSON.parse(JSON.stringify(SCENARIOS[key]));
+          readingMode = 'demo';
+          setReadingStatus('SIMULACIÓN · no es una lectura real');
           document.querySelectorAll('.scenario-btn').forEach((b) => {
             b.className = 'scenario-btn px-3 py-2 rounded-xl text-xs font-bold bg-cmd-900 hover:bg-cmd-800 text-slate-300 border border-slate-700 transition cursor-pointer';
           });
@@ -1770,15 +1789,25 @@ Elaboración y análisis: Carlos Daniel Zúñiga — Estación Zúñiga (San Mar
         state.headline = 'Telemetría calibrada desde consola Hard Kraft — San Martín, Mendoza';
         state.summary = 'Datos cargados manualmente por operador con recálculo automático de punto de rocío, gráficos y boletines de prensa.';
 
-        document.getElementById('header-sync-time').textContent = 'Calibrado recién';
+        readingMode = 'manual';
+        try {
+          const at = new Date().toISOString();
+          localStorage.setItem(storageKey, JSON.stringify({state, at}));
+          setReadingStatus('Manual local · ' + new Date(at).toLocaleString('es-AR'));
+        } catch (_) {
+          setReadingStatus('Manual · no se pudo guardar en este navegador');
+        }
         renderDashboard();
         showToast('✓ Lecturas de consola Hard Kraft aplicadas');
       });
 
       document.getElementById('btn-reset-station').addEventListener('click', () => {
+        try { localStorage.removeItem(storageKey); } catch (_) {}
         state = JSON.parse(JSON.stringify(SCENARIOS.despejado));
+        readingMode = 'demo';
+        setReadingStatus('SIMULACIÓN · no es una lectura real');
         renderDashboard();
-        showToast('Valores restablecidos al escenario base');
+        showToast('Lectura local eliminada; escenario de demostración');
       });
 
       document.getElementById('btn-broadcast-mode').addEventListener('click', () => {
