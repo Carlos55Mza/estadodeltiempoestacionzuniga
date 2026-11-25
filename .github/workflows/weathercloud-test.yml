@@ -17,11 +17,20 @@ jobs:
           python - <<'PY'
           from weathercloud import WeathercloudClient
           from datetime import datetime, timezone
+          ok = False
           with WeathercloudClient() as client:
-              c = client.get_current_conditions("5053285441")
-              if c.temperature is None or c.epoch is None:
-                  raise RuntimeError("No hay lectura verificable")
-              print("Fecha UTC:", datetime.fromtimestamp(c.epoch, timezone.utc))
-              for k in ("temperature", "humidity", "pressure", "wind_speed", "wind_gust", "wind_direction", "rain", "solar_radiation", "uv_index"):
-                  print(k, getattr(c, k, None))
+              for station in ("d5053285441", "5053285441"):
+                  print("Probando:", station, flush=True)
+                  try:
+                      c = client.get_current_conditions(station)
+                      print("Respuesta:", repr(c))
+                      for k in ("temperature", "epoch", "humidity", "pressure", "wind_speed", "wind_gust", "wind_direction", "rain", "solar_radiation", "uv_index"):
+                          print(k, getattr(c, k, None))
+                      if c.temperature is not None and c.epoch is not None:
+                          ok = True
+                          break
+                  except Exception as e:
+                      print(type(e).__name__, str(e))
+          if not ok:
+              raise RuntimeError("Ninguna variante devolvio lectura verificable")
           PY
