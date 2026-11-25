@@ -1,0 +1,51 @@
+name: Actualizar estación Hard Kraft
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '3/5 * * * *'
+permissions:
+  contents: write
+concurrency:
+  group: hard-kraft-data
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Consultar y guardar mediciones
+        env:
+          WU_API_KEY: ${{ secrets.WU_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.parse,urllib.error,math
+          from datetime import datetime,timezone
+          key=os.environ.get("WU_API_KEY")
+          if not key: raise SystemExit("Falta WU_API_KEY")
+          q=urllib.parse.urlencode(dict(stationId="ISANMA322",format="json",units="m",apiKey=key,numericPrecision="decimal"))
+          try:
+              with urllib.request.urlopen("https://api.weather.com/v2/pws/observations/current?"+q,timeout=25) as r:
+                  o=json.load(r)["observations"][0]
+          except Exception as e:
+              raise SystemExit("Consulta fallida: "+type(e).__name__) from None
+          m=o.get("metric") or {}
+          if o.get("stationID")!="ISANMA322": raise SystemExit("Estacion incorrecta")
+          at=o["obsTimeUtc"]
+          age=(datetime.now(timezone.utc)-datetime.fromisoformat(at.replace("Z","+00:00"))).total_seconds()
+          if not -120 <= age <= 1800: raise SystemExit("Lectura antigua o fecha incorrecta")
+          d=dict(station="ISANMA322",at=at,temp=m.get("temp"),humidity=o.get("humidity"),pressure=m.get("pressure"),windSpeed=m.get("windSpeed"),windGust=m.get("windGust"),windDeg=o.get("winddir"),rain=m.get("precipTotal"),uv=o.get("uv"),solar=o.get("solarRadiation"),feelsLike=m.get("heatIndex") if m.get("temp",0)>=27 else m.get("windChill"))
+          for k in ("temp","humidity","pressure","windSpeed","windGust","windDeg","rain","uv","solar"):
+              if not isinstance(d[k],(int,float)) or not math.isfinite(d[k]): raise SystemExit("Dato faltante: "+k)
+          if not isinstance(d["feelsLike"],(int,float)): d["feelsLike"]=None
+          with open("datos.json","w") as f: json.dump(d,f,allow_nan=False)
+          print("Lectura guardada:",at)
+          PY
+      - name: Publicar archivo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add datos.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Actualizar mediciones Hard Kraft"
+          git push
