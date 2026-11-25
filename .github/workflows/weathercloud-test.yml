@@ -1,0 +1,27 @@
+name: Prueba Weathercloud
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install weathercloud==0.1.5
+      - name: Consultar Hard Kraft
+        run: |
+          python - <<'PY'
+          from weathercloud import WeathercloudClient
+          from datetime import datetime, timezone
+          with WeathercloudClient() as client:
+              c = client.get_current_conditions("5053285441")
+              if c.temperature is None or c.epoch is None:
+                  raise RuntimeError("No hay lectura verificable")
+              print("Fecha UTC:", datetime.fromtimestamp(c.epoch, timezone.utc))
+              for k in ("temperature", "humidity", "pressure", "wind_speed", "wind_gust", "wind_direction", "rain", "solar_radiation", "uv_index"):
+                  print(k, getattr(c, k, None))
+          PY
