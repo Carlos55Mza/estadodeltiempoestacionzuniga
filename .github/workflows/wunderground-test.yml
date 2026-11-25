@@ -1,0 +1,36 @@
+name: Prueba Weather Underground
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Consultar estacion ISANMA322
+        env:
+          WU_API_KEY: ${{ secrets.WU_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os, json, urllib.request, urllib.parse, urllib.error
+          key = os.environ.get("WU_API_KEY")
+          if not key:
+              raise SystemExit("Falta el secreto WU_API_KEY")
+          params = urllib.parse.urlencode(dict(stationId="ISANMA322", format="json", units="m", apiKey=key, numericPrecision="decimal"))
+          try:
+              with urllib.request.urlopen("https://api.weather.com/v2/pws/observations/current?" + params, timeout=25) as response:
+                  data = json.load(response)
+          except urllib.error.HTTPError as e:
+              raise SystemExit("Error HTTP: " + str(e.code)) from None
+          except Exception as e:
+              raise SystemExit("Error de consulta: " + type(e).__name__) from None
+          obs = data.get("observations") or []
+          if not obs:
+              raise SystemExit("No hay observaciones")
+          o = obs[0]
+          m = o.get("metric") or {}
+          if o.get("stationID") != "ISANMA322" or m.get("temp") is None or not o.get("obsTimeUtc"):
+              raise SystemExit("Lectura incompleta o estacion incorrecta")
+          print(json.dumps({"estacion":o.get("stationID"),"fecha_utc":o.get("obsTimeUtc"),"temperatura":m.get("temp"),"humedad":o.get("humidity"),"presion":m.get("pressure"),"viento":m.get("windSpeed"),"rafaga":m.get("windGust"),"direccion":o.get("winddir"),"lluvia":m.get("precipTotal"),"uv":o.get("uv"),"solar":o.get("solarRadiation")},ensure_ascii=False,indent=2))
+          PY
