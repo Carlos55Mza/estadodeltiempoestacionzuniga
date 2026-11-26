@@ -617,7 +617,7 @@
           <div class="lg:col-span-5 glass-subpanel rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-4">
             <div class="space-y-3">
               <div class="flex items-center justify-between gap-2">
-                <span class="text-xs font-extrabold uppercase tracking-wider text-amber-300">Detalle del Evento Seleccionado</span>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-amber-300">Ejemplo sísmico no verificado</span>
                 <span id="quake-status-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                   Sin daños · Seguimiento
                 </span>
@@ -649,7 +649,7 @@
 
               <!-- Lista rápida de eventos recientes de referencia -->
               <div class="space-y-1.5">
-                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Eventos recientes de referencia en Cuyo:</div>
+                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ejemplos sísmicos ilustrativos (no actualizados):</div>
                 <button type="button" data-quake-select="q1" class="quake-list-btn w-full text-left px-3 py-2 rounded-xl bg-cmd-900/90 hover:bg-cmd-800 border border-amber-400/35 text-xs flex items-center justify-between transition cursor-pointer">
                   <span class="text-slate-200 font-medium">Precordillera Mendoza · Prof. 112 km</span>
                   <span class="font-mono font-bold text-amber-300">3.4 Mw</span>
@@ -1252,6 +1252,13 @@
       let state = JSON.parse(JSON.stringify(SCENARIOS.despejado));
       const storageKey = 'estacion-zuniga-manual-v1';
       let readingMode = 'demo';
+      let liveData=null, liveHistory=[];
+      const tz='America/Argentina/Mendoza';
+      const localDay=t=>new Date(t).toLocaleDateString('en-CA',{timeZone:tz});
+      const localTime=t=>new Date(t).toLocaleString('es-AR',{timeZone:tz});
+      const fmt=(v,u='')=>Number.isFinite(v)?v.toFixed(1)+u:'N/D';
+      const daily=()=>liveHistory.filter(x=>localDay(x.at)===localDay(Date.now()));
+      const extreme=(rows,k,fn)=>{const a=rows.map(x=>x[k]).filter(Number.isFinite);return a.length?fn(...a):null;};
       function setReadingStatus(message) {
         document.getElementById('header-sync-time').textContent = message;
       }
@@ -1414,7 +1421,16 @@
 
       // Generación automática de boletines para medios
       function buildPressBulletin() {
-        if (readingMode === 'live') return 'Consultar la lectura actual del tablero; historial y sismos no verificados.';
+        if (readingMode === 'live') {
+          const d=liveData, a=daily();
+          return `ESTACIÓN METEOROLÓGICA ZÚÑIGA – ZETA24 | San Martín, Mendoza
+Medición: ${localTime(d.at)} ART${Date.now()-Date.parse(d.at)>1200000?' (DESACTUALIZADA)':''}
+Temperatura: ${fmt(d.temp,' °C')} | Sensación: ${fmt(d.feelsLike,' °C')} | Humedad: ${fmt(d.humidity,'%')}
+Presión: ${fmt(d.pressure,' hPa')} | Viento: ${fmt(d.windSpeed,' km/h')} | Ráfaga: ${fmt(d.windGust,' km/h')}
+Lluvia acumulada informada: ${fmt(d.rain,' mm')}
+Extremos observados hoy (${a.length} registros): temperatura ${fmt(extreme(a,'temp',Math.min),' °C')} / ${fmt(extreme(a,'temp',Math.max),' °C')}; humedad ${fmt(extreme(a,'humidity',Math.min),'%')} / ${fmt(extreme(a,'humidity',Math.max),'%')}; ráfaga máxima ${fmt(extreme(a,'windGust',Math.max),' km/h')}.
+Cobertura parcial según registros disponibles. Fuente: Hard Kraft / Weather Underground ISANMA322. Se permite compartir citando la fuente.`;
+        }
         if (readingMode === 'demo') return 'SIMULACIÓN: no hay mediciones verificadas de la estación. No publicar como parte meteorológico real.';
         const dew = calcDewPoint(state.temp, state.humidity);
         const cardinal = degToCardinal(state.windDeg);
@@ -1465,6 +1481,7 @@ Elaboración y análisis: Carlos Daniel Zúñiga — Estación Zúñiga (San Mar
 
       // Renderiza todo el estado en la interfaz
       function renderDashboard() {
+        if (readingMode === "live") { renderLive(); return; }
         const dew = calcDewPoint(state.temp, state.humidity);
         const cardinal = degToCardinal(state.windDeg);
 
@@ -1874,33 +1891,38 @@ Contacto directo de redacción: ${email} | ${phone}`;
       });
 
       // Lecturas reales compartidas desde GitHub Actions
-      async function syncStation() {
-        try {
-          const response = await fetch('https://raw.githubusercontent.com/Carlos55Mza/estadodeltiempoestacionzuniga/main/datos.json?t=' + Date.now(), {cache:'no-store'});
-          if (!response.ok) throw Error('Sin archivo de datos');
-          const d = await response.json();
-          const keys = ['temp','humidity','pressure','windSpeed','windGust','windDeg','rain','uv','solar'];
-          if (d.station !== 'ISANMA322' || !keys.every(k=>Number.isFinite(d[k])) || !Number.isFinite(Date.parse(d.at))) throw Error('Lectura inválida');
-          const age = (Date.now()-Date.parse(d.at))/60000;
-          Object.assign(state, Object.fromEntries(keys.map(k=>[k,d[k]])));
-          state.feelsLike = Number.isFinite(d.feelsLike) ? d.feelsLike : d.temp;
-          state.tMin = d.temp; state.tMax = d.temp;
-          state.temp24h = Array(12).fill(d.temp);
-          state.baro12h = Array(12).fill(d.pressure);
-          state.trend = 'Sin historial';
-          state.badge = age > 20 ? 'Lectura antigua' : 'Lectura real';
-          state.badgeClass = 'bg-cyan-500/20 text-cyan-200 border-cyan-400/45';
-          state.headline = 'Hard Kraft · Weather Underground · ISANMA322';
-          state.summary = 'Última medición recibida. Historial y extremos diarios aún no disponibles; gráficos y boletín deshabilitados.';
-          readingMode = 'live';
-          renderDashboard();
-          setReadingStatus((age > 20 ? 'DESACTUALIZADO · ' : 'Lectura real · ') + new Date(d.at).toLocaleString('es-AR',{timeZone:'America/Argentina/Mendoza'}));
-          for(const id of ['temp-history-canvas','baro-history-canvas','baro-delta-pill']) document.getElementById(id).style.visibility='hidden';
-          for(const id of ['display-feels']) if(!Number.isFinite(d.feelsLike)) document.getElementById(id).textContent='N/D';
-          document.getElementById('press-textarea').value='Lectura real: '+d.temp+' °C, humedad '+d.humidity+' %, presión '+d.pressure+' hPa. Fecha: '+d.at+'. Sin historial ni informe sísmico verificado.';
-        } catch (_) {
-          setReadingStatus('Sin conexión automática · ' + (readingMode === 'live' ? 'última lectura conservada' : readingMode === 'manual' ? 'lectura manual local' : 'demostración'));
+      function renderLive(){
+        const d=liveData,a=daily(), stale=Date.now()-Date.parse(d.at)>1200000;
+        const put=(id,v)=>document.getElementById(id).textContent=v;
+        put('synoptic-badge',stale?'Lectura antigua':'Lectura real');
+        put('synoptic-headline','Hard Kraft · Weather Underground · ISANMA322');
+        put('synoptic-summary',`Historial real: ${a.length} registros de hoy. Extremos observados, cobertura parcial. Última medición: ${localTime(d.at)}.`);
+        setReadingStatus((stale?'DESACTUALIZADO · ':'Lectura real · ')+localTime(d.at));
+        const lo=extreme(a,'temp',Math.min),hi=extreme(a,'temp',Math.max);
+        for(const [id,v,u] of [['temp',d.temp,'°'],['feels',d.feelsLike,'°C'],['tmin',lo,'°'],['tmax',hi,'°'],['amplitude',lo===null?null:hi-lo,' °C'],['pres',d.pressure,''],['wind',d.windSpeed,''],['gust',d.windGust,' km/h'],['deg',d.windDeg,'°'],['hum',d.humidity,'%'],['dew',Number.isFinite(d.temp)&&d.humidity>0?calcDewPoint(d.temp,d.humidity):null,'°C'],['rain',d.rain,' mm'],['uv',d.uv,' UV'],['solar',d.solar,' W/m²']]) put('display-'+id,fmt(v,u));
+        put('display-wind-cardinal',Number.isFinite(d.windDeg)?degToCardinal(d.windDeg):'N/D');
+        for(const id of ['temp-comfort-tag','zonda-wind-badge','zonda-sector-indicator','hum-status-text','dew-frost-text','rain-status-text','display-trend','display-baro-note']) put(id,'Ver medición');
+        for(const [id,v] of [['bar-hum',d.humidity],['bar-dew',0],['bar-rain',d.rain/40*100],['bar-uv',d.uv/12*100]]) document.getElementById(id).style.width=(Number.isFinite(v)?Math.max(0,Math.min(100,v)):0)+'%';
+        for(const [id,v,min,max] of [['temp-gauge-arc',d.temp,-5,45],['pres-gauge-arc',d.pressure,990,1030]]) document.getElementById(id).style.strokeDashoffset=212*(1-(Number.isFinite(v)?Math.max(0,Math.min(1,(v-min)/(max-min))):0));
+        document.getElementById('compass-needle').style.transform=`rotate(${d.windDeg||0}deg)`;
+        for(const [id,k,h,u,c] of [['temp-history-canvas','temp',24,'°C','#22d3ee'],['baro-history-canvas','pressure',12,'hPa','#34d399']]){
+          const rows=liveHistory.filter(x=>Date.parse(x.at)>=Date.now()-h*3600000&&Number.isFinite(x[k]));
+          const canvas=document.getElementById(id); canvas.style.visibility=rows.length>=2?'visible':'hidden';
+          if(rows.length>=2){const step=Math.max(1,Math.ceil(rows.length/12));const sample=rows.filter((x,i)=>i%step===0||i===rows.length-1);drawLineChart(id,sample.map(x=>x[k]),sample.map(x=>new Date(x.at).toLocaleTimeString('es-AR',{timeZone:tz,hour:'2-digit',minute:'2-digit'})),c,'rgba(34,211,238,.15)',u);}
         }
+        put('baro-delta-pill','Registros reales');
+        document.getElementById('press-textarea').value=buildPressBulletin();
+      }
+      async function syncStation(){
+        try{
+          const base='https://raw.githubusercontent.com/Carlos55Mza/estadodeltiempoestacionzuniga/main/';
+          const get=async f=>{const r=await fetch(base+f+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('Sin archivo');return r.json();};
+          const valid=x=>x&&x.station==='ISANMA322'&&Number.isFinite(Date.parse(x.at));
+          const d=await get('datos.json');if(!valid(d))throw Error('Lectura inválida');
+          let rows=[];try{rows=await get('historial.json');}catch(_){}
+          liveHistory=[...new Map([...liveHistory,...(Array.isArray(rows)?rows:[]),d].filter(valid).map(x=>[x.at,x])).values()].sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
+          liveData=d;readingMode='live';renderDashboard();
+        }catch(_){if(readingMode==='live')renderLive();setReadingStatus('Sin conexión automática · última lectura no confirmada');}
       }
       syncStation();
       setInterval(syncStation, 60000);
