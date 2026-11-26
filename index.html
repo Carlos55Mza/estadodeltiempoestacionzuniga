@@ -985,17 +985,19 @@
         </button>
       </div>
 
-      <!-- Selector de 3 formatos editoriales -->
+      <!-- Selector de 5 formatos editoriales -->
       <div class="flex flex-wrap gap-2" role="group" aria-label="Formatos editoriales de parte meteorológico">
         <button type="button" data-press-format="flash" class="press-format-btn px-4 py-2 rounded-xl text-xs font-extrabold bg-cyan-500/20 text-cyan-200 border border-cyan-400/45 transition cursor-pointer">
-          ⚡ Flash Breve (Redes / WhatsApp)
+          ⚡ Flash Breve (Facebook / WhatsApp)
         </button>
         <button type="button" data-press-format="radio" class="press-format-btn px-4 py-2 rounded-xl text-xs font-bold bg-cmd-900 hover:bg-cmd-800 text-slate-300 border border-slate-700 transition cursor-pointer">
-          🎙️ Boletín Radial / TV (Locución)
+          🎙️ Boletín Radial (Locución)
         </button>
         <button type="button" data-press-format="diario" class="press-format-btn px-4 py-2 rounded-xl text-xs font-bold bg-cmd-900 hover:bg-cmd-800 text-slate-300 border border-slate-700 transition cursor-pointer">
-          📰 Informe Técnico para Diario / Portal Web
+          📰 Informe para Diario / Portal Web
         </button>
+        <button type="button" data-press-format="tv" class="press-format-btn px-4 py-2 rounded-xl text-xs font-bold bg-cmd-900 hover:bg-cmd-800 text-slate-300 border border-slate-700 transition cursor-pointer">📺 Placa para TV</button>
+        <button type="button" data-press-format="completo" class="press-format-btn px-4 py-2 rounded-xl text-xs font-bold bg-cmd-900 hover:bg-cmd-800 text-slate-300 border border-slate-700 transition cursor-pointer">🌡️ Informe Meteorológico Completo</button>
       </div>
 
       <div>
@@ -1421,62 +1423,53 @@
 
       // Generación automática de boletines para medios
       function buildPressBulletin() {
-        if (readingMode === 'live') {
-          const d=liveData, a=daily();
-          return `ESTACIÓN METEOROLÓGICA ZÚÑIGA – ZETA24 | San Martín, Mendoza
-Medición: ${localTime(d.at)} ART${Date.now()-Date.parse(d.at)>1200000?' (DESACTUALIZADA)':''}
-Temperatura: ${fmt(d.temp,' °C')} | Sensación: ${fmt(d.feelsLike,' °C')} | Humedad: ${fmt(d.humidity,'%')}
-Presión: ${fmt(d.pressure,' hPa')} | Viento: ${fmt(d.windSpeed,' km/h')} | Ráfaga: ${fmt(d.windGust,' km/h')}
-Lluvia acumulada informada: ${fmt(d.rain,' mm')}
-Extremos observados hoy (${a.length} registros): temperatura ${fmt(extreme(a,'temp',Math.min),' °C')} / ${fmt(extreme(a,'temp',Math.max),' °C')}; humedad ${fmt(extreme(a,'humidity',Math.min),'%')} / ${fmt(extreme(a,'humidity',Math.max),'%')}; ráfaga máxima ${fmt(extreme(a,'windGust',Math.max),' km/h')}.
-Cobertura parcial según registros disponibles. Fuente: Hard Kraft / Weather Underground ISANMA322. Se permite compartir citando la fuente.`;
-        }
-        if (readingMode === 'demo') return 'SIMULACIÓN: no hay mediciones verificadas de la estación. No publicar como parte meteorológico real.';
-        const dew = calcDewPoint(state.temp, state.humidity);
-        const cardinal = degToCardinal(state.windDeg);
-        const quake = QUAKES[currentQuakeKey];
-        const nowStr = new Date().toLocaleString('es-AR', {
-          timeZone: 'America/Argentina/Mendoza',
-          dateStyle: 'short',
-          timeStyle: 'short'
-        });
-
-        if (currentPressFormat === 'flash') {
-          return `⚡ FLASH METEOROLÓGICO — ESTACIÓN ZÚÑIGA (San Martín, Mza) | ${nowStr} ART
-${state.badge.toUpperCase()}: ${state.headline}.
-🌡️ Temp: ${state.temp.toFixed(1)}°C (ST ${state.feelsLike.toFixed(1)}°C) | 💧 Humedad: ${state.humidity}% (Rocío ${dew}°C)
-🧭 Presión: ${state.pressure.toFixed(1)} hPa (${state.trend}) | 🌬️ Viento: ${state.windSpeed} km/h ${cardinal} (ráfagas ${state.windGust} km/h)
-🌋 Sismos Cuyo: ${quake.location} (${quake.mag}, prof. ${quake.depth}) — sin novedades locales.
-📡 Fuente: Estación Zúñiga (Hard Kraft / Weathercloud) · Carlos Daniel Zúñiga.`;
-        }
-
-        if (currentPressFormat === 'radio') {
-          return `🎙️ BOLETÍN PARA RADIO Y TV — ESTACIÓN ZÚÑIGA (San Martín, Mendoza)
-Actualización de las ${nowStr} hora Argentina.
-"En el Este mendocino tenemos ${state.temp.toFixed(1)} grados de temperatura, con una sensación térmica de ${state.feelsLike.toFixed(1)} grados y humedad del ${state.humidity} por ciento. La presión atmosférica se ubica en ${state.pressure.toFixed(1)} hectopascales con tendencia ${state.trend.toLowerCase()}, mientras que el viento sopla del sector ${cardinal} a ${state.windSpeed} kilómetros por hora, con ráfagas que alcanzan los ${state.windGust} kilómetros por hora.
-${state.summary}
-En materia sísmica en la región de Cuyo, el monitoreo mantiene vigilancia normal con último evento de referencia de magnitud ${quake.mag} en ${quake.location}, sin impacto en nuestra zona."
-Informe de Carlos Daniel Zúñiga, Estación Meteorológica Zúñiga.`;
-        }
-
-        return `INFORME TÉCNICO PARA PRENSA Y PORTALES DIGITALES
-ESTACIÓN ZÚÑIGA — CENTRO DE MONITOREO METEOROLÓGICO, SÍSMICO Y AMBIENTAL
-Ubicación: San Martín, Mendoza (-33.08° S, -68.47° O · 657 m s.n.m.) | Emisión: ${nowStr} ART
-================================================================================
-1. SITUACIÓN SINÓPTICA Y ESTADO ACTUAL
-${state.headline}. ${state.summary}
-
-2. TELEMETRÍA INSTRUMENTAL (CONSOLA HARD KRAFT / RED WEATHERCLOUD)
-• Temperatura ambiente: ${state.temp.toFixed(1)}°C (Sensación térmica: ${state.feelsLike.toFixed(1)}°C | Extremos: ${state.tMin.toFixed(1)}°C / ${state.tMax.toFixed(1)}°C)
-• Higrometría: Humedad relativa ${state.humidity}% | Punto de rocío calculado: ${dew}°C
-• Barometría: Presión relativa ${state.pressure.toFixed(1)} hPa | Tendencia: ${state.trend}
-• Anemometría: Viento medio ${state.windSpeed} km/h del ${cardinal} (${state.windDeg}°) | Ráfaga máxima: ${state.windGust} km/h
-• Precipitación diaria acumulada: ${state.rain.toFixed(1)} mm | Índice UV: ${state.uv.toFixed(1)} (${state.solar} W/m²)
-
-3. VIGILANCIA SÍSMICA REGIONAL (CUYO / CORDILLERA)
-Evento de referencia monitoreado: ${quake.location} — Magnitud ${quake.mag}, profundidad ${quake.depth} (${quake.dist} de San Martín). ${quake.notes}
-
-Elaboración y análisis: Carlos Daniel Zúñiga — Estación Zúñiga (San Martín, Mendoza).`;
+        if (readingMode !== 'live') return readingMode === 'demo' ? 'SIMULACIÓN: no hay mediciones verificadas. No publicar como información real.' : 'Lectura manual: sin verificación automática. Los boletines para medios requieren una lectura real de la estación.';
+        const d=liveData, a=daily();
+        const stale=Date.now()-Date.parse(d.at)>1200000;
+        const time=localTime(d.at)+' ART'+(stale?' (LECTURA DESACTUALIZADA)':'');
+        const dir=Number.isFinite(d.windDeg)?degToCardinal(d.windDeg):'N/D';
+        const f=fmt, lo=extreme(a,'temp',Math.min), hi=extreme(a,'temp',Math.max);
+        const source='Fuente: Estación Meteorológica Zúñiga – ZETA24 | Hard Kraft / Weather Underground ISANMA322. Se permite compartir citando la fuente.';
+        const place='San Martín, Mendoza';
+        const wind=`${f(d.windSpeed,' km/h')} (${dir})`;
+        const dew=Number.isFinite(d.temp)&&d.humidity>0?calcDewPoint(d.temp,d.humidity):null;
+        if(currentPressFormat==='flash') return `⚡ ESTADO DEL TIEMPO | ${place}
+📅 ${time}
+🌡️ Temperatura: ${f(d.temp,' °C')} | Sensación: ${f(d.feelsLike,' °C')}
+💧 Humedad: ${f(d.humidity,'%')} | Presión: ${f(d.pressure,' hPa')}
+🌬️ Viento: ${wind} | Ráfaga: ${f(d.windGust,' km/h')}
+🌧️ Lluvia acumulada informada: ${f(d.rain,' mm')}
+${source}`;
+        if(currentPressFormat==='radio') return `🎙️ BOLETÍN RADIAL | ${place}
+Medición: ${time}
+Desde la Estación Meteorológica Zúñiga informamos que la temperatura registrada en San Martín es de ${f(d.temp,' grados Celsius')}, con una sensación térmica de ${f(d.feelsLike,' grados')} y una humedad relativa del ${f(d.humidity,' por ciento')}. La presión atmosférica es de ${f(d.pressure,' hectopascales')}. El viento registra ${wind}, con ráfagas de ${f(d.windGust,' kilómetros por hora')}. La precipitación acumulada informada es de ${f(d.rain,' milímetros')}.
+Informe de Carlos Daniel Zúñiga. ${source}`;
+        if(currentPressFormat==='tv') return `📺 PLACA PARA TELEVISIÓN | ${place}
+Medición: ${time}
+TEMPERATURA: ${f(d.temp,' °C')}
+SENSACIÓN TÉRMICA: ${f(d.feelsLike,' °C')}
+HUMEDAD: ${f(d.humidity,'%')}
+PRESIÓN: ${f(d.pressure,' hPa')}
+VIENTO: ${wind} | RÁFAGA: ${f(d.windGust,' km/h')}
+LLUVIA: ${f(d.rain,' mm')}
+${source}`;
+        const extremes=`Extremos observados hoy (${a.length} registros): mínima ${f(lo,' °C')}, máxima ${f(hi,' °C')}; humedad ${f(extreme(a,'humidity',Math.min),'%')} a ${f(extreme(a,'humidity',Math.max),'%')}; ráfaga máxima ${f(extreme(a,'windGust',Math.max),' km/h')}. Cobertura parcial según registros disponibles.`;
+        if(currentPressFormat==='diario') return `ESTADO DEL TIEMPO EN SAN MARTÍN, MENDOZA
+Medición: ${time}
+La Estación Meteorológica Zúñiga registró una temperatura de ${f(d.temp,' °C')} y una sensación térmica de ${f(d.feelsLike,' °C')}. La humedad relativa fue de ${f(d.humidity,'%')}, mientras que la presión atmosférica alcanzó ${f(d.pressure,' hPa')}.
+El viento registró ${wind}, con ráfagas de ${f(d.windGust,' km/h')}. La lluvia acumulada informada fue de ${f(d.rain,' mm')}.
+${extremes}
+Elaboración: Carlos Daniel Zúñiga. ${source}`;
+        return `INFORME METEOROLÓGICO COMPLETO | ${place}
+Medición: ${time}
+Temperatura: ${f(d.temp,' °C')} | Sensación: ${f(d.feelsLike,' °C')}
+Humedad: ${f(d.humidity,'%')} | Punto de rocío: ${f(dew===null?null:Number(dew),' °C')}
+Presión: ${f(d.pressure,' hPa')}
+Viento: ${wind} | Dirección: ${f(d.windDeg,'°')} | Ráfaga: ${f(d.windGust,' km/h')}
+Lluvia acumulada informada: ${f(d.rain,' mm')}
+Índice UV: ${f(d.uv)} | Radiación solar: ${f(d.solar,' W/m²')}
+${extremes}
+${source}`;
       }
 
       // Renderiza todo el estado en la interfaz
